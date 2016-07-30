@@ -47,9 +47,8 @@ defmodule GenServerMemCache do
   * `gen_server_name` - Name of the cache. See start_link or supervisor tree.
   * `key` - Name of the key
   * `minutes_valid` - Minutes to keep the item in cache. Default: nil - do not expire.
-  * `keep_alive` - Keep the item in cache if it still accessed. It expires if it is not retrieved in `minutes_valid`. Default: false
-  * `f_new_value` - function that supplies the value. Enables automatic value loading.
-  *                 When minutes_valid is not nil and keep_alive is false, this function can be launched in a new Erlang process. 
+  * `keep_alive` - Keep the item in cache if it still accessed. It expires if it is not retrieved in `minutes_valid` minutes. Default: false
+  * `f_new_value` - function that supplies the value. Enables automatic value loading. When `minutes_valid` is not nil and `keep_alive` is false, this function can be launched in a new Erlang process. 
 
   ## Examples
 
