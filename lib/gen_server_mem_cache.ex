@@ -11,7 +11,8 @@ defmodule GenServerMemCache do
   @doc ~S'''
   Start the memory cache process linked to the current process.
 
-  The `f_system_time` parameter is meant for time travel support. You can provide a function that returns the Unix/Posix UTC time.
+  The `f_system_time` parameter is meant for time travel support. 
+  You can provide a function that returns the Unix/Posix UTC time in seconds.
   Default: nil - use current system time.
 
   ## Example
@@ -97,12 +98,19 @@ defmodule GenServerMemCache do
       {:expired, "Fret dots"}
     
   '''
-  @spec get(GenServer.name, Map.key, integer) :: any
+  @spec get(GenServer.name, Map.key, integer) :: {term, any}
   def get(gen_server_name, key, minutes_keep_alive \\ nil) do
     GenServer.call(gen_server_name, {:get, key, minutes_keep_alive, false})
   end
 
-  @doc "Get the complete cache key-value map. The value is a tupple with {value, expiration Unix/Posix time}."
+  @doc "Get value of cached item. Nil if is not cached or when value is nil."
+  @spec get!(GenServer.name, Map.key, integer) :: any
+  def get!(gen_server_name, key, minutes_keep_alive \\ nil) do
+    {_, value} = GenServer.call(gen_server_name, {:get, key, minutes_keep_alive, false})
+    value
+  end
+
+  @doc "Get the complete cache key-value map. The value is a tupple: {value, expiration Unix/Posix time in seconds}."
   @spec get_all_entries(GenServer.name) :: map
   def get_all_entries(gen_server_name) do
     GenServer.call(gen_server_name, {:get_all_entries})
@@ -120,17 +128,19 @@ defmodule GenServerMemCache do
     GenServer.stop(gen_server_name)
   end
 
-  # return Unix/Posix UTC time
+  # return Unix/Posix UTC time in seconds
   defp system_time do
     :os.system_time(:seconds)
   end
 
   ## Server Callbacks
 
+  # GenServer calling itself:
   defp check_expired(now, expire_check_time) do
     if !is_nil(expire_check_time) and now >= expire_check_time do
-       GenServer.cast(:erlang.self(), {:remove_expired_entries})
+       remove_expired_entries(:erlang.self())
     end
+    :ok
   end
 
   @doc false
@@ -142,14 +152,11 @@ defmodule GenServerMemCache do
   @doc false
   def handle_call({:put, key, value, minutes_valid}, _from, {f_system_time, expire_check_time, map}) do
     now = f_system_time.()
-    expires = if is_nil(minutes_valid) do
-                nil
-              else
-                now + minutes_valid * 60
-              end
+    expires = if is_nil(minutes_valid), do: nil, else: now + minutes_valid * 60
     m = Map.put(map, key, {value, expires})
+    next_check_time = if is_nil(expire_check_time) and minutes_valid != nil, do: f_system_time.() + 60, else: expire_check_time
     check_expired(now, expire_check_time)
-    {:reply, :ok, {f_system_time, expire_check_time, m}}
+    {:reply, :ok, {f_system_time, next_check_time, m}}
   end
 
   def handle_call({:remove, key}, _from, {f_system_time, expire_check_time, map}) do
@@ -178,8 +185,9 @@ defmodule GenServerMemCache do
        is_nil(expires) or (now + minutes_keep_alive * 60 >= expires + 30) -> %{map | key => {value, now + minutes_keep_alive * 60 + 30}}
        true -> map
     end
+    next_check_time = if is_nil(expire_check_time) and minutes_keep_alive != nil, do: f_system_time.() + 60, else: expire_check_time
     check_expired(now, expire_check_time)
-    {:reply, {status, value}, {f_system_time, expire_check_time, m}}
+    {:reply, {status, value}, {f_system_time, next_check_time, m}}
   end
 
   def handle_call({:get_all_entries}, _from, {f_system_time, expire_check_time, map}) do
@@ -187,19 +195,19 @@ defmodule GenServerMemCache do
   end
 
   @doc false
-  def handle_cast({:remove_expired_entries}, _from, {f_system_time, expire_check_time, map}) do
+  def handle_cast({:remove_expired_entries}, {f_system_time, expire_check_time, map}) do
     now = f_system_time.()
     if !is_nil(expire_check_time) and now >= expire_check_time do
        m = map
-           |> Enum.filter(fn {_key, {_value, expires}}  -> is_nil(expires) or expires >= now end)
+           |> Enum.filter(fn {_key, {_value, expires}} -> is_nil(expires) or expires >= now end)
            |> Enum.into(%{})
-       has_expire = Enum.any?(m, fn {_key, {_value, expires}}  -> !is_nil(expires) end)
+       has_expire = Enum.any?(m, fn {_key, {_value, expires}} -> !is_nil(expires) end)
        case has_expire do
-         false -> {:noreply, :ok, {f_system_time, nil, m}}
-         true  -> {:noreply, :ok, {f_system_time, f_system_time.() + 60, m}}
+         false -> {:noreply, {f_system_time, nil, m}}
+         true  -> {:noreply, {f_system_time, f_system_time.() + 60, m}}
        end
      else 
-       {:noreply, :ok, {f_system_time, expire_check_time, map}}
+       {:noreply, {f_system_time, expire_check_time, map}}
      end
   end
 
