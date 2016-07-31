@@ -45,13 +45,13 @@ If you want apply this cache for database queries, try this first:
 
 ### Keep in cache for a limited time, automatically load new value after that
 
-Example: scrape news and keep it 10 minutes in cache
+  - Example: scrape news and keep it 10 minutes in cache
 
     ```elixir
     us_news = GenServerMemCache.cache(GenServerMemCache, "news_us", 10, &Scraper.scrape_news_us/0)
     ```
 
-or with anonymous function:
+  - or with anonymous function:
 
       ```elixir
       def news(country) do
@@ -69,11 +69,12 @@ list of countries
 
 ### Keep as long this process is running
 
+  - Example: cache products retrieved from csv file
     ```elixir
     products = GenServerMemCache.cache(GenServerMemCache, "products", fn -> "products.csv" |> File.stream! |> CSV.decode |> Enum.to_list  end)
     ```
     
-updates are still possible:
+  - updates are still possible:
 
     ```elixir
     :ok = GenServerMemCache.put(GenServerMemCache, "products", new_value)
@@ -82,6 +83,8 @@ updates are still possible:
 or you can force an automatically load at first access by invalidating the cached item.
 
 ### Invalidate cached item
+
+  - Example: remove products from cache
 
     ```elixir
     :ok = GenServerMemCache.remove(GenServerMemCache, "products")
