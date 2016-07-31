@@ -94,10 +94,49 @@ or you can force an automatically load at first access by invalidating the cache
     :ok = GenServerMemCache.remove(GenServerMemCache, "products")
     ```
 
-## iex demo
+## IEx demo
 
 ```sh
 $ iex -S mix
 
-iex(1)> pid = GenServerMemCache.start_link()
+iex(1)> {:ok, pid} = GenServerMemCache.start_link()                                                                         [7/1967]
+{:ok, #PID<0.163.0>}
+iex(2)> GenServerMemCache.get_all_entries(pid)
+%{}
+iex(3)> GenServerMemCache.put(pid, "key1", "value1", 1)
+:ok
+iex(4)> IO.inspect :calendar.universal_time(); GenServerMemCache.get(pid, "key1")
+{{2016, 7, 31}, {13, 7, 5}}
+{:ok, "value1"}
+iex(5)> GenServerMemCache.put(pid, "key2", %{"a" => 1, "b" => {1, 2, "whatever"}})
+:ok
+iex(6)> GenServerMemCache.get!(pid, "key2") |> Map.get("b")
+{1, 2, "whatever"}
+iex(7)> IO.inspect :calendar.universal_time(); GenServerMemCache.get(pid, "key1")
+{{2016, 7, 31}, {13, 7, 57}}
+{:ok, "value1"}
+iex(8)> IO.inspect :calendar.universal_time(); GenServerMemCache.get(pid, "key1")
+{{2016, 7, 31}, {13, 8, 26}}
+{:expired, "value1"}
+iex(9)> GenServerMemCache.put(pid, "key3", "value3")
+:ok
+iex(10)> GenServerMemCache.get_all_entries(pid)
+%{"key1" => {"value1", 1469970477},
+  "key2" => {%{"a" => 1, "b" => {1, 2, "whatever"}}, nil},
+  "key3" => {"value3", nil}}
+iex(11)> IO.inspect :calendar.universal_time(); GenServerMemCache.get(pid, "key1")
+{{2016, 7, 31}, {13, 9, 6}}
+{:expired, "value1"}
+iex(12)> IO.inspect :calendar.universal_time(); GenServerMemCache.get(pid, "key1")
+{{2016, 7, 31}, {13, 9, 21}}
+{:not_cached, nil}
+iex(13)> GenServerMemCache.get_all_entries(pid)
+%{"key2" => {%{"a" => 1, "b" => {1, 2, "whatever"}}, nil},
+  "key3" => {"value3", nil}}
+iex(14)> GenServerMemCache.remove(pid, "key3")
+:ok
+iex(15)> GenServerMemCache.get(pid, "key3")
+{:not_cached, nil}
+iex(16)> GenServerMemCache.stop(pid)
+:ok
 ```
