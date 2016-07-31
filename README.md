@@ -65,7 +65,11 @@ Note about automatically new value loading:
 
 ### Keep in cache for a limited time but extend life-time everytime it is accessed
 
-list of countries
+  - Example: cache http response of countries rest service for at least 20 minutes 
+
+    ```elixir
+    countries_response = GenServerMemCache.cache(GenServerMemCache, "countries_response", 20, true, fn -> HTTPoison.get! "http://restcountries.eu/rest/v1/" end)
+    ```
 
 ### Keep as long this process is running
 
