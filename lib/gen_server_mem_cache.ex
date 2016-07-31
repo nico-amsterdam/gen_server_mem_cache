@@ -73,13 +73,13 @@ defmodule GenServerMemCache do
   end
 
   @doc "Create or update an item in cache."
-  @spec put(GenServer.name, Map.key, Map.value, integer) :: any
+  @spec put(GenServer.name, Map.key, Map.value, integer) :: term
   def put(gen_server_name, key, value, minutes_valid \\ nil) do
     GenServer.call(gen_server_name, {:put, key, value, minutes_valid})
   end
 
   @doc "Remove an item from cache."
-  @spec remove(GenServer.name, Map.key) :: any
+  @spec remove(GenServer.name, Map.key) :: term
   def remove(gen_server_name, key) do
     GenServer.call(gen_server_name, {:remove, key})
   end
@@ -115,6 +115,7 @@ defmodule GenServerMemCache do
   end
 
   @doc "Stops the cache process."
+  @spec stop(GenServer.name) :: :ok
   def stop(gen_server_name) do
     GenServer.stop(gen_server_name)
   end
@@ -181,8 +182,8 @@ defmodule GenServerMemCache do
     {:reply, {status, value}, {f_system_time, expire_check_time, m}}
   end
 
-  def handle_call({:get_all_entries}, _from, {_f_system_time, _expire_check_time, map}) do
-    map
+  def handle_call({:get_all_entries}, _from, {f_system_time, expire_check_time, map}) do
+    {:reply, map, {f_system_time, expire_check_time, map}}
   end
 
   @doc false
