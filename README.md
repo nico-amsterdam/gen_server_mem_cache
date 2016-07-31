@@ -6,9 +6,9 @@ In-memory key-value cache with expiration-time after creation/modification/acces
 
 ## Before you start
 
-- If you want apply this for your database, consider to try this first:
-  - Do everything you possibly can to lower the network latency between application servers and database
-  - Use the database cache. Databases are optimized for caching and it has the great advantage that the database knows when it should update a cached item.
+If you want apply this cache for database queries, try this first:
+  - Do everything you possibly can to lower the network latency between application servers and database, and
+  - Use the database cache. Databases are optimized for caching and it has the great advantage that the database knows when it should update/invalidate a cached item.
 
 ## Installation
 
@@ -45,10 +45,23 @@ In-memory key-value cache with expiration-time after creation/modification/acces
 
 ### Keep in cache for a limited time, automatically load new value after that
 
-- time is in minutes
-- Note for automatic reloading: think about what happens
+Example: scrape news and keep it 10 minutes in cache
 
-scraped news
+    ```elixir
+    us_news = GenServerMemCache.cache(GenServerMemCache, "news_us", 10, &Scraper.scrape_news_us/0)
+    ```
+
+or with anonymous function:
+
+      ```elixir
+      def news(country) do
+        GenServerMemCache.cache(GenServerMemCache, "news_" <> country, 10, fn -> Scraper.scrape_news(country) end)
+      end
+      ```
+
+Note about automatically new value loading:
+- How long this function take to get the new value, and is this acceptable when the old value is expired? If it takes too long, consider to use an scheduler to regularly recalculate the new value and update the cache with that.
+
 
 ### Keep in cache for a limited time but extend life-time everytime it is accessed
 
@@ -56,13 +69,23 @@ list of countries
 
 ### Keep as long this process is running
 
-file load product specifications
+    ```elixir
+    products = GenServerMemCache.cache(GenServerMemCache, "products", fn -> "products.csv" |> File.stream! |> CSV.decode |> Enum.to_list  end)
+    ```
+    
+updates are still possible:
 
-- schedule regular updates, using put
+    ```elixir
+    :ok = GenServerMemCache.put(GenServerMemCache, "products", new_value)
+    ```
+
+or you can force an automatically load at first access by invalidating the cached item.
 
 ### Invalidate cached item
 
-remove
+    ```elixir
+    :ok = GenServerMemCache.remove(GenServerMemCache, "products")
+    ```
 
 ## iex demo
 
