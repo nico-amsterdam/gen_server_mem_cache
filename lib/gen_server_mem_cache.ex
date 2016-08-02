@@ -172,15 +172,18 @@ defmodule GenServerMemCache do
        nil -> {:not_cached, nil, nil}
        {value, expires} when minutes_keep_alive != nil and minutes_keep_alive >= 0 -> {:ok, value, expires}
        {value, expires} when is_nil(expires) and is_nil(minutes_keep_alive) -> {:ok, value, expires}
-       {value, expires} when warn and is_nil(minutes_keep_alive) and expires >= now - 30 -> {:expire_warning, value, expires}
+       {value, expires} when warn and is_nil(minutes_keep_alive) and expires <= now + 30 and expires > now -> {:expire_warning, value, expires}
        {value, expires} when expires != nil and expires >= now -> {:ok, value, expires}
        {old_value, expires} -> {:expired, old_value, expires}
     end
     m = cond do
        is_nil(map_value) -> map
-       # just (within 30 seconds) expired, give the first caller 30 seconds to come with a new value. 
-       # During the next 30 seconds other clients receive ok, with the existing value.
-       status == :expire_warning -> %{map | key => {value, now + 30}}
+       # The client interface cache-method handles expire_warnings, therefore:
+       # 1 till 30 seconds before expiring, the first caller gets a warning and 30 seconds to come with a new value. 
+       # During the next 30 seconds other clients receive ok, with the existing cached value.
+       # After 30 seconds, if no new value is set, again an expire_warning will be given. 
+       # The purpose of this: for very frequent requested keys, don't create a storm when the value expires.
+       status == :expire_warning -> %{map | key => {value, now + 60}}
        is_nil(minutes_keep_alive) -> map
        is_nil(expires) or (now + minutes_keep_alive * 60 >= expires + 30) -> %{map | key => {value, now + minutes_keep_alive * 60 + 30}}
        true -> map

@@ -264,7 +264,7 @@ defmodule GenServerMemCacheTest do
     now = :os.system_time(:seconds)
     f_now = get_time_travel_function(now)
     f_now_plus_7_plus_30_seconds = get_time_travel_function(now, 7, 30)
-    f_now_plus_8_plus_1_second = get_time_travel_function(now, 8, 1)
+    f_now_plus_8_plus_31_second = get_time_travel_function(now, 8, 31)
     map1 = %{}
 
     # in this case we only have an initial expire time and we don't keep it alive
@@ -277,16 +277,19 @@ defmodule GenServerMemCacheTest do
     {:reply, {:expire_warning, "value1"}, {_f_system_time, nil, map3}} = 
       GenServerMemCache.handle_call({:get, "key1", nil, true}, pid, {f_now_plus_7_plus_30_seconds, nil, map2}) 
 
-    assert map3 == map2
+    assert map3 != map2
+    assert map3 == %{"key1" => {"value1", now + 7 * 60 + 30 + 60}}
 
-    # when can also suppress this warning for the client interface get-method. Only the cache-method uses the warning.
+    # we can also suppress this expire_warning for the client interface get-method. 
+    # Only the client cache-method uses the warning, because that method garanties that it will try to set a new value.
     {:reply, {:ok, "value1"}, {_f_system_time, nil, map4}} = 
       GenServerMemCache.handle_call({:get, "key1", nil, false}, pid, {f_now_plus_7_plus_30_seconds, nil, map3}) 
 
     assert map4 == map3
 
+    # If we fail to set a new value, the result is that the expire_warning gave us extra time: 30 till 59 seconds.
     {:reply, {:expired, "value1"}, {_f_system_time, nil, map5}} = 
-      GenServerMemCache.handle_call({:get, "key1", nil, false}, pid, {f_now_plus_8_plus_1_second, nil, map4}) 
+      GenServerMemCache.handle_call({:get, "key1", nil, false}, pid, {f_now_plus_8_plus_31_second, nil, map4}) 
 
     assert map5 == map4
 
