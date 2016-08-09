@@ -65,18 +65,16 @@ defmodule GenServerMemCache do
     cache_value = GenServer.call(gen_server_name, {:get, key, (if keep_alive, do: minutes_valid, else: nil), true})
     case cache_value do
        {:ok, value}             -> value
-       {:expire_warning, value} -> spawn(fn -> :ok = put(gen_server_name, key, f_new_value.(), minutes_valid) end)
+       {:expire_warning, value} -> spawn(fn -> put(gen_server_name, key, minutes_valid, f_new_value.()) end)
                                    value
-       _                        -> new_value = f_new_value.()
-                                   :ok = put(gen_server_name, key, new_value, minutes_valid)
-                                   new_value
+       _                        -> put(gen_server_name, key, minutes_valid, f_new_value.())
     end
   end
 
-  @doc "Create or update an item in cache."
-  @spec put(GenServer.name, Map.key, Map.value, integer) :: term
-  def put(gen_server_name, key, value, minutes_valid \\ nil) do
-    GenServer.call(gen_server_name, {:put, key, value, minutes_valid})
+  @doc "Create or update an item in cache. Returns item value."
+  @spec put(GenServer.name, Map.key, integer, Map.value) :: any
+  def put(gen_server_name, key, minutes_valid \\ nil, value) do
+    GenServer.call(gen_server_name, {:put, key, minutes_valid, value})
   end
 
   @doc "Remove an item from cache."
@@ -150,13 +148,13 @@ defmodule GenServerMemCache do
   end
 
   @doc false
-  def handle_call({:put, key, value, minutes_valid}, _from, {f_system_time, expire_check_time, map}) do
+  def handle_call({:put, key, minutes_valid, value}, _from, {f_system_time, expire_check_time, map}) do
     now = f_system_time.()
     expires = if is_nil(minutes_valid), do: nil, else: now + minutes_valid * 60
     m = Map.put(map, key, {value, expires})
     next_check_time = if is_nil(expire_check_time) and minutes_valid != nil, do: f_system_time.() + 60, else: expire_check_time
     check_expired(now, expire_check_time)
-    {:reply, :ok, {f_system_time, next_check_time, m}}
+    {:reply, value, {f_system_time, next_check_time, m}}
   end
 
   def handle_call({:remove, key}, _from, {f_system_time, expire_check_time, map}) do

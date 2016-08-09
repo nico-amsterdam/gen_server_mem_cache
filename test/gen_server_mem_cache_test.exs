@@ -17,8 +17,9 @@ defmodule GenServerMemCacheTest do
     f_now_plus_10 = get_time_travel_function(now, 10)
     map1 = %{}
 
-    {:reply, :ok, {_f_system_time, next_check_time, map2}} = 
-      GenServerMemCache.handle_call({:put, "key1", "value1", 8}, pid, {f_now, nil, map1})
+    {:reply, putval, {_f_system_time, next_check_time, map2}} = 
+      GenServerMemCache.handle_call({:put, "key1", 8, "value1"}, pid, {f_now, nil, map1})
+    assert putval == "value1"
 
     assert map2 == %{"key1" => {"value1", now + 8 * 60}}
     assert next_check_time == now + 60
@@ -37,8 +38,9 @@ defmodule GenServerMemCacheTest do
     f_now_plus_15 = get_time_travel_function(now, 15)
     map1 = %{}
 
-    {:reply, :ok, {_f_system_time, next_check_time, map2}} = 
-      GenServerMemCache.handle_call({:put, "key1", "value1", 8}, pid, {f_now, nil, map1})
+    {:reply, putval, {_f_system_time, next_check_time, map2}} = 
+      GenServerMemCache.handle_call({:put, "key1", 8, "value1"}, pid, {f_now, nil, map1})
+    assert putval == "value1"
 
     assert map2 == %{"key1" => {"value1", now + 8 * 60}}
     assert next_check_time == now + 60
@@ -62,8 +64,9 @@ defmodule GenServerMemCacheTest do
     f_now_plus_10 = get_time_travel_function(now, 10)
     map1 = %{}
 
-    {:reply, :ok, {_f_system_time, next_check_time, map2}} = 
-      GenServerMemCache.handle_call({:put, "key1", "value1", 8}, pid, {f_now, nil, map1})
+    {:reply, putval, {_f_system_time, next_check_time, map2}} = 
+      GenServerMemCache.handle_call({:put, "key1", 8, "value1"}, pid, {f_now, nil, map1})
+    assert putval == "value1"
 
     assert map2 == %{"key1" => {"value1", now + 8 * 60}}
     assert next_check_time == now + 60
@@ -88,8 +91,9 @@ defmodule GenServerMemCacheTest do
     f_now_plus_20 = get_time_travel_function(now, 20)
     map1 = %{}
 
-    {:reply, :ok, {_f_system_time, next_check_time, map2}} = 
-      GenServerMemCache.handle_call({:put, "key1", "value1", 8}, pid, {f_now, nil, map1})
+    {:reply, putval, {_f_system_time, next_check_time, map2}} = 
+      GenServerMemCache.handle_call({:put, "key1", 8, "value1"}, pid, {f_now, nil, map1})
+    assert putval == "value1"
 
     assert map2 == %{"key1" => {"value1", now + 8 * 60}}
     assert next_check_time == now + 60
@@ -123,8 +127,9 @@ defmodule GenServerMemCacheTest do
     f_now_plus_20 = get_time_travel_function(now, 20)
     map1 = %{}
 
-    {:reply, :ok, {_f_system_time, next_check_time, map2}} = 
-      GenServerMemCache.handle_call({:put, "key1", "value1", 8}, pid, {f_now, nil, map1})
+    {:reply, putval, {_f_system_time, next_check_time, map2}} = 
+      GenServerMemCache.handle_call({:put, "key1", 8, "value1"}, pid, {f_now, nil, map1})
+    assert putval == "value1"
 
     assert map2 == %{"key1" => {"value1", now + 8 * 60}}
     assert next_check_time == now + 60
@@ -169,8 +174,9 @@ defmodule GenServerMemCacheTest do
     f_now_plus_30 = get_time_travel_function(now, 30)
     map1 = %{}
 
-    {:reply, :ok, {_f_system_time, nil, map2}} = 
-      GenServerMemCache.handle_call({:put, "key1", "value1", nil}, pid, {f_now, nil, map1})
+    {:reply, putval, {_f_system_time, nil, map2}} = 
+      GenServerMemCache.handle_call({:put, "key1", nil, "value1"}, pid, {f_now, nil, map1})
+    assert putval == "value1"
 
     assert map2 == %{"key1" => {"value1", nil}}
 
@@ -184,8 +190,9 @@ defmodule GenServerMemCacheTest do
 
     assert map4 == map3
 
-    {:reply, :ok, {_f_system_time, nil, map5}} = 
-      GenServerMemCache.handle_call({:put, "key1", "value2", nil}, pid, {f_now_plus_30, nil, map4})
+    {:reply, putval, {_f_system_time, nil, map5}} = 
+      GenServerMemCache.handle_call({:put, "key1", nil, "value2"}, pid, {f_now_plus_30, nil, map4})
+    assert putval == "value2"
 
     assert map5 == %{"key1" => {"value2", nil}}
   end
@@ -199,8 +206,9 @@ defmodule GenServerMemCacheTest do
     f_now_plus_30 = get_time_travel_function(now, 30)
     map1 = %{}
 
-    {:reply, :ok, {_f_system_time, nil, map2}} = 
-      GenServerMemCache.handle_call({:put, "key1", "value1", nil}, pid, {f_now, nil, map1})
+    {:reply, putval, {_f_system_time, nil, map2}} = 
+      GenServerMemCache.handle_call({:put, "key1", nil, "value1"}, pid, {f_now, nil, map1})
+    assert putval == "value1"
 
     assert map2 == %{"key1" => {"value1", nil}}
 
@@ -216,8 +224,9 @@ defmodule GenServerMemCacheTest do
     assert map4 == map3
 
     # a new put overwrites whatever expire time there was
-    {:reply, :ok, {_f_system_time, nil, map5}} = 
-      GenServerMemCache.handle_call({:put, "key1", "value2", nil}, pid, {f_now_plus_30, nil, map4})
+    {:reply, putval, {_f_system_time, nil, map5}} = 
+      GenServerMemCache.handle_call({:put, "key1", nil, "value2"}, pid, {f_now_plus_30, nil, map4})
+    assert putval == "value2"
 
     assert map5 == %{"key1" => {"value2", nil}}
   end
@@ -232,8 +241,9 @@ defmodule GenServerMemCacheTest do
     f_now_plus_6 = get_time_travel_function(now, 6)
     map1 = %{}
 
-    {:reply, :ok, {_f_system_time, next_check_time, map2}} = 
-      GenServerMemCache.handle_call({:put, "key1", "value1", 8}, pid, {f_now, nil, map1})
+    {:reply, putval, {_f_system_time, next_check_time, map2}} = 
+      GenServerMemCache.handle_call({:put, "key1", 8, "value1"}, pid, {f_now, nil, map1})
+    assert putval == "value1"
 
     assert map2 == %{"key1" => {"value1", now + 8 * 60}}
     assert next_check_time == now + 60
@@ -268,8 +278,9 @@ defmodule GenServerMemCacheTest do
     map1 = %{}
 
     # in this case we only have an initial expire time and we don't keep it alive
-    {:reply, :ok, {_f_system_time, next_check_time, map2}} = 
-      GenServerMemCache.handle_call({:put, "key1", "value1", 8}, pid, {f_now, nil, map1})
+    {:reply, putval, {_f_system_time, next_check_time, map2}} = 
+      GenServerMemCache.handle_call({:put, "key1", 8, "value1"}, pid, {f_now, nil, map1})
+    assert putval == "value1"
 
     assert map2 == %{"key1" => {"value1", now + 8 * 60}}
     assert next_check_time == now + 60
