@@ -81,7 +81,7 @@ Note about automatically new value loading:
   - updates are still possible:
 
     ```elixir
-    :ok = GenServerMemCache.put(GenServerMemCache, "products", new_value)
+    GenServerMemCache.put(GenServerMemCache, "products", new_value)
     ```
 
 or you can force an automatically load at first access by invalidating the cached item.
@@ -103,13 +103,13 @@ iex(1)> {:ok, pid} = GenServerMemCache.start_link()                             
 {:ok, #PID<0.163.0>}
 iex(2)> GenServerMemCache.get_all_entries(pid)
 %{}
-iex(3)> GenServerMemCache.put(pid, "key1", "value1", 1)
-:ok
+iex(3)> GenServerMemCache.put(pid, "key1", 1, "value1")
+"value1"
 iex(4)> IO.inspect :calendar.universal_time(); GenServerMemCache.get(pid, "key1")
 {{2016, 7, 31}, {13, 7, 5}}
 {:ok, "value1"}
 iex(5)> GenServerMemCache.put(pid, "key2", %{"a" => 1, "b" => {1, 2, "whatever"}})
-:ok
+%{"a" => 1, "b" => {1, 2, "whatever"}}
 iex(6)> GenServerMemCache.get!(pid, "key2") |> Map.get("b")
 {1, 2, "whatever"}
 iex(7)> IO.inspect :calendar.universal_time(); GenServerMemCache.get(pid, "key1")
@@ -119,7 +119,7 @@ iex(8)> IO.inspect :calendar.universal_time(); GenServerMemCache.get(pid, "key1"
 {{2016, 7, 31}, {13, 8, 26}}
 {:expired, "value1"}
 iex(9)> GenServerMemCache.put(pid, "key3", "value3")
-:ok
+"value3"
 iex(10)> GenServerMemCache.get_all_entries(pid)
 %{"key1" => {"value1", 1469970477},
   "key2" => {%{"a" => 1, "b" => {1, 2, "whatever"}}, nil},
