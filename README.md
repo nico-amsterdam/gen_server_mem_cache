@@ -2,13 +2,7 @@
 
 Trade memory for performance
 
-In-memory key-value cache with expiration-time after creation/modification/access, automatic value loading and time travel support.
-
-## Before you start
-
-If you want apply this cache for database queries, try this first:
-  - Do everything you possibly can to lower the network latency between application servers and database, and
-  - Use the database cache. Databases are optimized for caching and it has the great advantage that the database knows when it should update/invalidate a cached item.
+In-memory key-value cache with expiration-time after creation/modification/access (a.k.a. entry time-to-live and idle-timeout), automatic value loading and time travel support.
 
 ## Installation
 
