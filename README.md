@@ -2,7 +2,10 @@
 
 Trade memory for performance
 
+For optimal speed I recommend [SimpleMemCache](https://github.com/nico-amsterdam/simple_mem_cache) that is backed by [ETS](https://elixirschool.com/lessons/specifics/ets/) instead of a [GenServer](http://elixir-lang.org/docs/stable/elixir/GenServer.html) based implementation. ETS can handle concurrent read and write actions. GenServer handles everything synchronized and can easily become a bottleneck. This GenServerMemCache can be used as an example on how to use GenServer behaviour.
+
 In-memory key-value cache with expiration-time after creation/modification/access (a.k.a. entry time-to-live and idle-timeout), automatic value loading and time travel support.
+
 
 ## Installation
 
@@ -67,9 +70,13 @@ Note about automatically new value loading:
 
 ### Keep as long this process is running
 
-  - Example: cache products retrieved from csv file
+  - Example: cache products retrieved from csv file. Not a good example, because nowadays files are stored on SSD and there will be no performance gain.
     ```elixir
-    products = GenServerMemCache.cache(GenServerMemCache, "products", fn -> "products.csv" |> File.stream! |> CSV.decode |> Enum.to_list  end)
+    products = GenServerMemCache.cache(GenServerMemCache, "products", fn -> "products.csv" 
+                                                                            |> File.stream! 
+                                                                            |> CSV.parse_stream 
+                                                                            |> Enum.to_list 
+                                                                      end)
     ```
     
   - updates are still possible:
